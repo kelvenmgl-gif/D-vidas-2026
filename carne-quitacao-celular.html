@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E8EFE9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1814" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-title" content="Carnê">
+<meta name="format-detection" content="telephone=no">
+<title>Carnê de quitação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+    --paper: #E8EFE9;
+    --sheet: #F8FBF7;
+    --ink: #17302A;
+    --ink-soft: #546A61;
+    --rule: #B8C9BE;
+    --track: #D6E2D9;
+    --stamp: #2747B5;
+    --debt: #9E2F48;
+    --ok: #2C744B;
+    --warn: #8F5E00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0F1814;
+      --sheet: #17231D;
+      --ink: #E2ECE5;
+      --ink-soft: #97AEA2;
+      --rule: #30463A;
+      --track: #24362C;
+      --stamp: #93A8FF;
+      --debt: #F291A6;
+      --ok: #80D2A1;
+      --warn: #E3B556;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0F1814;
+    --sheet: #17231D;
+    --ink: #E2ECE5;
+    --ink-soft: #97AEA2;
+    --rule: #30463A;
+    --track: #24362C;
+    --stamp: #93A8FF;
+    --debt: #F291A6;
+    --ok: #80D2A1;
+    --warn: #E3B556;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 18px 40px; }
+
+  /* Capa */
+  .capa { padding-bottom: 26px; border-bottom: 2px dashed var(--rule); }
+  h1 {
+    font-stretch: 125%;
+    font-weight: 800;
+    font-size: clamp(2.2rem, 9vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  .periodo { margin: 8px 0 0; color: var(--ink-soft); font-weight: 500; }
+  .lead { margin: 18px 0 0; max-width: 34em; font-size: 1.05rem; }
+  .progresso { margin-top: 22px; }
+  .prog-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .prog-linha span { color: var(--ink-soft); }
+  .prog-linha strong { font-stretch: 125%; font-weight: 800; font-size: 1.7rem; }
+  .prog-falta { margin: 6px 0 0; color: var(--ink-soft); font-size: .92rem; }
+  .trilho { height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .barra { height: 100%; width: 0; background: var(--stamp); border-radius: 999px; }
+  body.pronto .barra { transition: width .45s ease; }
+
+  h2 {
+    font-stretch: 118%;
+    font-weight: 750;
+    font-size: 1.4rem;
+    line-height: 1.15;
+    margin: 46px 0 6px;
+  }
+  .intro { margin: 0 0 18px; color: var(--ink-soft); max-width: 36em; }
+
+  /* Cupons */
+  .cupom {
+    position: relative;
+    display: flex;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    margin: 0 0 14px;
+  }
+  .canhoto {
+    flex: 0 0 84px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 18px 8px 14px;
+    border-right: 2px dashed var(--rule);
+    border-radius: 9px 0 0 9px;
+  }
+  .canhoto::before, .canhoto::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--paper);
+  }
+  .canhoto::before { top: -10px; }
+  .canhoto::after { bottom: -10px; }
+  .tag-proximo { display: none; }
+  .dia { font-stretch: 125%; font-weight: 800; font-size: 2rem; line-height: 1; }
+  .mes { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+  .rotulo { font-size: .74rem; color: var(--ink-soft); margin-top: 8px; line-height: 1.25; }
+  .cupom.atual { border-color: var(--ink); }
+  .cupom.atual .canhoto { background: var(--ink); color: var(--sheet); border-right-color: var(--ink); }
+  .cupom.atual .rotulo { color: inherit; opacity: .8; }
+  .cupom.atual .tag-proximo { display: block; font-size: .72rem; font-weight: 600; margin-bottom: 6px; opacity: .85; }
+
+  .corpo { flex: 1; min-width: 0; padding: 14px 16px 16px; }
+  .bloco h3 { font-size: .82rem; font-weight: 600; color: var(--ink-soft); margin: 0 0 2px; }
+  .bloco ul { list-style: none; margin: 0 0 12px; padding: 0; }
+  .lista-entra li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: .95rem; }
+  .lista-entra .valor { color: var(--ok); white-space: nowrap; font-weight: 600; }
+  .item {
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--track);
+    cursor: pointer;
+    font-size: .95rem;
+  }
+  .lista-paga li:first-child .item { border-top: 0; }
+  .item input { width: 22px; height: 22px; margin: 0; accent-color: var(--stamp); cursor: pointer; }
+  .item input:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
+  .item .valor { white-space: nowrap; font-weight: 600; }
+  .item.eh-divida .valor { color: var(--debt); }
+  .item input:checked ~ .nome, .item input:checked ~ .valor { text-decoration: line-through; color: var(--ink-soft); }
+  .quita {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--ok);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0 7px;
+    vertical-align: 1px;
+    text-decoration: none;
+  }
+  .sobra {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin: 4px 0 0;
+    padding-top: 10px;
+    border-top: 2px solid var(--ink);
+    font-weight: 600;
+  }
+  .sobra small { font-weight: 400; color: var(--ink-soft); font-size: .82rem; }
+  .sobra strong { font-stretch: 112%; font-size: 1.1rem; white-space: nowrap; }
+  .nota { margin: 8px 0 0; font-size: .86rem; color: var(--ink-soft); }
+
+  .carimbo {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-stretch: 125%;
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: .06em;
+    color: var(--stamp);
+    border: 3px double var(--stamp);
+    border-radius: 6px;
+    padding: 1px 10px;
+    opacity: 0;
+    transform: rotate(-10deg) scale(1.5);
+    pointer-events: none;
+  }
+  body.pronto .carimbo { transition: opacity .2s ease, transform .3s cubic-bezier(.2, 1.5, .4, 1); }
+  .cupom.pago .carimbo { opacity: .9; transform: rotate(-10deg) scale(1); }
+
+  /* Dívidas */
+  .divida { padding: 16px 0; border-top: 1px solid var(--rule); }
+  .divida:last-child { border-bottom: 1px solid var(--rule); }
+  .d-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .d-topo h3 { margin: 0; font-stretch: 112%; font-weight: 700; font-size: 1.1rem; }
+  .d-total { font-weight: 700; color: var(--debt); white-space: nowrap; }
+  .d-meta { margin: 2px 0 0; color: var(--ink-soft); font-size: .9rem; }
+  .divida .trilho { height: 8px; }
+  .d-status { margin: 6px 0 10px; font-size: .9rem; }
+  .divida.quitada .d-status { color: var(--ok); font-weight: 700; }
+  .divida.quitada .d-total { color: var(--ok); }
+  .parcelas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .parcelas li {
+    display: flex;
+    gap: 6px;
+    font-size: .82rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .p-data { color: var(--ink-soft); }
+  .p-valor { font-weight: 600; }
+  .parcelas li.feito { background: var(--stamp); border-color: var(--stamp); color: var(--sheet); }
+  .parcelas li.feito .p-data { color: inherit; opacity: .8; }
+  .d-nota { margin: 10px 0 0; font-size: .86rem; color: var(--ink-soft); max-width: 40em; }
+
+  /* Entradas */
+  .entradas { list-style: none; margin: 0; padding: 0; }
+  .entradas li { padding: 12px 0; border-top: 1px solid var(--rule); }
+  .entradas li:last-child { border-bottom: 1px solid var(--rule); }
+  .e-topo { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+  .e-valor { white-space: nowrap; }
+  .e-info { margin-top: 3px; font-size: .88rem; color: var(--ink-soft); }
+  .selo {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: .74rem;
+    font-weight: 700;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0 8px;
+  }
+  .selo.alto { color: var(--ok); }
+  .selo.medio { color: var(--warn); }
+  .selo.baixo { color: var(--debt); }
+  .fora { margin: 14px 0 0; font-size: .9rem; color: var(--ink-soft); max-width: 40em; }
+  .fora strong { color: var(--ink); }
+
+  /* Mês a mês */
+  .mes-bloco { padding: 16px 0; border-top: 1px solid var(--rule); }
+  .m-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .m-topo h3 { margin: 0; font-stretch: 112%; font-weight: 700; font-size: 1.1rem; }
+  .m-topo span { color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .pilha { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 10px 0; background: var(--track); }
+  .pilha span { display: block; height: 100%; }
+  .s-contas, .k-contas { background: var(--ink-soft); }
+  .s-dividas, .k-dividas { background: var(--debt); }
+  .s-sobra, .k-sobra { background: var(--ok); }
+  .legenda { margin: 0; display: grid; gap: 4px; }
+  .legenda div { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; }
+  .legenda dt { display: flex; align-items: center; gap: 8px; }
+  .legenda dd { margin: 0; font-weight: 600; white-space: nowrap; }
+  .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .m-nota { margin: 8px 0 0; font-size: .86rem; color: var(--ink-soft); }
+  .resto { margin: 0; padding-top: 14px; border-top: 1px solid var(--rule); font-size: .95rem; }
+
+  footer { margin-top: 48px; padding-top: 18px; border-top: 2px dashed var(--rule); }
+  footer p { margin: 0 0 14px; color: var(--ink-soft); font-size: .9rem; }
+  #limpar {
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink);
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  #limpar:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
+
+  @media (max-width: 380px) {
+    main { padding-left: 14px; padding-right: 14px; }
+    .canhoto { flex-basis: 72px; }
+    .corpo { padding: 12px 12px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.pronto .barra, body.pronto .carimbo { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="capa">
+    <h1>Carnê de quitação</h1>
+    <p class="periodo">Novembro de 2026 a março de 2027</p>
+    <p class="lead">Quatro dívidas somando R$ 2.969,10. PicPay e Neia ficam zerados até 20/12, o empréstimo termina em 15/01 e o Vitor em março.</p>
+    <div class="progresso" aria-live="polite">
+      <div class="prog-linha"><span>Pago até agora</span><strong id="pago-total">R$ 0,00</strong></div>
+      <div class="trilho"><div class="barra" id="barra-total"></div></div>
+      <p class="prog-falta" id="falta-total">Falta R$ 2.969,10</p>
+    </div>
+  </header>
+
+  <section>
+    <h2>Datas de pagamento</h2>
+    <p class="intro">Marque cada conta quando pagar. Quando todas as contas de uma data estiverem marcadas, ela ganha o carimbo.</p>
+    <div id="cupons"><article class="cupom atual" data-i="0"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">02</span><span class="mes">nov</span><span class="rotulo">Saldo inicial</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Saldo em conta</span><span class="valor">R$ 464,00</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item"><input type="checkbox" data-id="energia-nov"><span class="nome">Energia de novembro</span><span class="valor">R$ 181,41</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 14/11</small></span><strong>R$ 282,59</strong></p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="1"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">15</span><span class="mes">nov</span><span class="rotulo">Adiantamento</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Adiantamento</span><span class="valor">R$ 552,98</span></li><li><span>Freelas de novembro (3 × R$ 70)</span><span class="valor">~R$ 210,00</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item"><input type="checkbox" data-id="internet-nov"><span class="nome">Internet</span><span class="valor">R$ 100,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="picpay"><span class="nome">PicPay<span class="quita">quita</span></span><span class="valor">R$ 373,00</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 29/11</small></span><strong>~R$ 289,98</strong></p><p class="nota">Em novembro os freelas ficam com você: é o mês mais apertado.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="2"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">30</span><span class="mes">nov</span><span class="rotulo">Folha mensal</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Folha mensal</span><span class="valor">~R$ 730,00</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item"><input type="checkbox" data-id="energia-dez"><span class="nome">Energia de dezembro</span><span class="valor">~R$ 185,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="neia-1"><span class="nome">Neia, parcela 1 de 2</span><span class="valor">R$ 165,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="vitor-1"><span class="nome">Vitor, parcela 1 de 5</span><span class="valor">R$ 61,15</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="emp-1"><span class="nome">Empréstimo</span><span class="valor">R$ 100,00</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 14/12</small></span><strong>~R$ 218,85</strong></p><p class="nota">Separe a energia de dezembro já neste dia, mesmo que ela vença depois.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="3"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">15</span><span class="mes">dez</span><span class="rotulo">Adiantamento</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Adiantamento</span><span class="valor">R$ 552,98</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item"><input type="checkbox" data-id="internet-dez"><span class="nome">Internet</span><span class="valor">R$ 100,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="emp-2"><span class="nome">Empréstimo</span><span class="valor">R$ 200,00</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 29/12</small></span><strong>R$ 252,98</strong></p><p class="nota">Esse valor precisa durar até o fim do mês, Natal incluído.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="4"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">~20</span><span class="mes">dez</span><span class="rotulo">13º, previsão</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>13º, 2ª parcela</span><span class="valor">R$ 1.071,40</span></li><li><span>Freelas de dezembro até o dia 20</span><span class="valor">~R$ 140,00</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item eh-divida"><input type="checkbox" data-id="neia-2"><span class="nome">Neia, parcela 2 de 2<span class="quita">quita</span></span><span class="valor">R$ 165,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="emp-3"><span class="nome">Empréstimo</span><span class="valor">R$ 1.046,40</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia</span><strong>~R$ 0,00</strong></p><p class="nota">Tudo o que entra aqui vai para as dívidas.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="5"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">30</span><span class="mes">dez</span><span class="rotulo">Folha mensal</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Folha mensal</span><span class="valor">~R$ 730,00</span></li><li><span>Último freela de dezembro</span><span class="valor">~R$ 70,00</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item eh-divida"><input type="checkbox" data-id="emp-4"><span class="nome">Empréstimo</span><span class="valor">R$ 385,35</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="vitor-2"><span class="nome">Vitor, parcela 2 de 5</span><span class="valor">R$ 61,15</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 14/01</small></span><strong>~R$ 353,50</strong></p><p class="nota">Também precisa cobrir a energia de janeiro.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="6"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">15</span><span class="mes">jan</span><span class="rotulo">Adiantamento</span></div><div class="corpo"><div class="bloco"><h3>Entra</h3><ul class="lista-entra"><li><span>Adiantamento</span><span class="valor">R$ 552,98</span></li></ul></div><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item"><input type="checkbox" data-id="internet-jan"><span class="nome">Internet</span><span class="valor">R$ 100,00</span></label></li><li><label class="item eh-divida"><input type="checkbox" data-id="emp-5"><span class="nome">Empréstimo, restante<span class="quita">quita</span></span><span class="valor">R$ 228,60</span></label></li></ul></div><p class="sobra"><span>Sobra pro dia a dia <small>até 29/01</small></span><strong>R$ 224,38</strong></p><p class="nota">Com 4 freelas a mais até 30/12, este pagamento sai em 30/12 e o empréstimo fecha no ano.</p></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="7"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">31</span><span class="mes">jan</span><span class="rotulo">até o fim do mês</span></div><div class="corpo"><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item eh-divida"><input type="checkbox" data-id="vitor-3"><span class="nome">Vitor, parcela 3 de 5</span><span class="valor">R$ 61,15</span></label></li></ul></div></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="8"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">28</span><span class="mes">fev</span><span class="rotulo">até o fim do mês</span></div><div class="corpo"><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item eh-divida"><input type="checkbox" data-id="vitor-4"><span class="nome">Vitor, parcela 4 de 5</span><span class="valor">R$ 61,15</span></label></li></ul></div></div><div class="carimbo" aria-hidden="true">Pago</div></article><article class="cupom" data-i="9"><div class="canhoto"><span class="tag-proximo">próximo</span><span class="dia">31</span><span class="mes">mar</span><span class="rotulo">vencimento final</span></div><div class="corpo"><div class="bloco"><h3>Paga</h3><ul class="lista-paga"><li><label class="item eh-divida"><input type="checkbox" data-id="vitor-5"><span class="nome">Vitor, parcela 5 de 5<span class="quita">quita</span></span><span class="valor">R$ 61,15</span></label></li></ul></div></div><div class="carimbo" aria-hidden="true">Pago</div></article></div>
+  </section>
+
+  <section>
+    <h2>Cada dívida</h2>
+    <p class="intro">Em ordem de prioridade. As parcelas ficam azuis conforme você marca os pagamentos acima.</p>
+    <div id="dividas"><div class="divida" data-d="emprestimo"><div class="d-topo"><h3>Empréstimo</h3><span class="d-total">R$ 1.960,35</span></div><p class="d-meta">Vence em 18/12/2026. Cinco pagamentos, quitado em 15/01.</p><div class="trilho"><div class="barra"></div></div><p class="d-status">R$ 0,00 pago, falta R$ 1.960,35</p><ul class="parcelas"><li data-id="emp-1"><span class="p-data">30/11</span><span class="p-valor">R$ 100,00</span></li><li data-id="emp-2"><span class="p-data">15/12</span><span class="p-valor">R$ 200,00</span></li><li data-id="emp-3"><span class="p-data">~20/12</span><span class="p-valor">R$ 1.046,40</span></li><li data-id="emp-4"><span class="p-data">30/12</span><span class="p-valor">R$ 385,35</span></li><li data-id="emp-5"><span class="p-data">15/01</span><span class="p-valor">R$ 228,60</span></li></ul><p class="d-nota">Combine antes com quem emprestou: R$ 300 até 18/12, R$ 1.046,40 quando cair o 13º, R$ 385,35 em 30/12 e R$ 228,60 em 15/01. Com 4 freelas a mais até 30/12, dá pra quitar tudo ainda em 2026.</p></div><div class="divida" data-d="picpay"><div class="d-topo"><h3>PicPay</h3><span class="d-total">R$ 373,00</span></div><p class="d-meta">Vence em 15/11/2026. À vista, no dia do adiantamento.</p><div class="trilho"><div class="barra"></div></div><p class="d-status">R$ 0,00 pago, falta R$ 373,00</p><ul class="parcelas"><li data-id="picpay"><span class="p-data">15/11</span><span class="p-valor">R$ 373,00</span></li></ul><p class="d-nota">Pague no dia 15, sem atraso: os juros de atraso costumam ser altos.</p></div><div class="divida" data-d="neia"><div class="d-topo"><h3>Neia</h3><span class="d-total">R$ 330,00</span></div><p class="d-meta">Vence em 20/12/2026. Duas parcelas de R$ 165,00.</p><div class="trilho"><div class="barra"></div></div><p class="d-status">R$ 0,00 pago, falta R$ 330,00</p><ul class="parcelas"><li data-id="neia-1"><span class="p-data">30/11</span><span class="p-valor">R$ 165,00</span></li><li data-id="neia-2"><span class="p-data">~20/12</span><span class="p-valor">R$ 165,00</span></li></ul></div><div class="divida" data-d="vitor"><div class="d-topo"><h3>Vitor</h3><span class="d-total">R$ 305,75</span></div><p class="d-meta">Vence em 31/03/2027. Cinco parcelas de R$ 61,15.</p><div class="trilho"><div class="barra"></div></div><p class="d-status">R$ 0,00 pago, falta R$ 305,75</p><ul class="parcelas"><li data-id="vitor-1"><span class="p-data">30/11</span><span class="p-valor">R$ 61,15</span></li><li data-id="vitor-2"><span class="p-data">30/12</span><span class="p-valor">R$ 61,15</span></li><li data-id="vitor-3"><span class="p-data">31/01</span><span class="p-valor">R$ 61,15</span></li><li data-id="vitor-4"><span class="p-data">28/02</span><span class="p-valor">R$ 61,15</span></li><li data-id="vitor-5"><span class="p-data">31/03</span><span class="p-valor">R$ 61,15</span></li></ul><p class="d-nota">Na sua planilha o vencimento está 31/03/2026; o plano considera 2027.</p></div></div>
+  </section>
+
+  <section>
+    <h2>Entradas previstas</h2>
+    <p class="intro">Quanto dá pra confiar em cada valor que o plano usa.</p>
+    <ul class="entradas">
+      <li>
+        <div class="e-topo"><span>Saldo em conta</span><span class="e-valor">R$ 464,00</span></div>
+        <div class="e-info"><span class="selo alto">Confirmado</span>Em 02/11, antes de pagar a energia.</div>
+      </li>
+      <li>
+        <div class="e-topo"><span>Adiantamento</span><span class="e-valor">R$ 552,98</span></div>
+        <div class="e-info"><span class="selo alto">Fixo</span>Todo dia 15. Veio igual em todos os meses de 2026.</div>
+      </li>
+      <li>
+        <div class="e-topo"><span>Folha mensal</span><span class="e-valor">~R$ 730,00</span></div>
+        <div class="e-info"><span class="selo medio">Varia</span>Fim do mês. Em 2026 ficou entre R$ 732,95 e R$ 823,98; o plano usa um pouco menos que o mínimo, por segurança.</div>
+      </li>
+      <li>
+        <div class="e-topo"><span>13º, 2ª parcela</span><span class="e-valor">R$ 1.071,40</span></div>
+        <div class="e-info"><span class="selo alto">Confirmado</span>Cai até 20/12. Vale checar a data exata com o RH.</div>
+      </li>
+      <li>
+        <div class="e-topo"><span>Freelas</span><span class="e-valor">~R$ 210,00/mês</span></div>
+        <div class="e-info"><span class="selo baixo">Variável</span>3 por mês a R$ 70. Cada freela a mais soma R$ 70 ao plano.</div>
+      </li>
+    </ul>
+    <p class="fora"><strong>Fora do plano:</strong> a 1ª parcela do 13º, que você já recebeu nas férias, e a PLR, que só volta em janeiro de 2027.</p>
+  </section>
+
+  <section>
+    <h2>Mês a mês</h2>
+    <p class="intro">O salário do dia 30 já paga a primeira quinzena do mês seguinte.</p>
+    <div id="meses"><div class="mes-bloco"><div class="m-topo"><h3>Novembro</h3><span>Entra ~R$ 1.956,98</span></div><div class="pilha" role="img" aria-label="Divisão das entradas de novembro"><span class="s-contas" data-w="23.833151079724882" style="width:23.83%"></span><span class="s-dividas" data-w="35.7259655182986" style="width:35.73%"></span><span class="s-sobra" data-w="40.440883401976514" style="width:40.44%"></span></div><dl class="legenda"><div><dt><i class="k k-contas"></i>Contas fixas (energia e internet)</dt><dd>R$ 466,41</dd></div><div><dt><i class="k k-dividas"></i>Dívidas</dt><dd>R$ 699,15</dd></div><div><dt><i class="k k-sobra"></i>Sobra pro dia a dia</dt><dd>~R$ 791,42</dd></div></dl><p class="m-nota">As contas fixas incluem a energia de dezembro, separada em 30/11.</p></div><div class="mes-bloco"><div class="m-topo"><h3>Dezembro</h3><span>Entra ~R$ 2.564,38</span></div><div class="pilha" role="img" aria-label="Divisão das entradas de dezembro"><span class="s-contas" data-w="3.899578065653296" style="width:3.90%"></span><span class="s-dividas" data-w="72.45026088177259" style="width:72.45%"></span><span class="s-sobra" data-w="23.650161052574113" style="width:23.65%"></span></div><dl class="legenda"><div><dt><i class="k k-contas"></i>Contas fixas (energia e internet)</dt><dd>R$ 100,00</dd></div><div><dt><i class="k k-dividas"></i>Dívidas</dt><dd>R$ 1.857,90</dd></div><div><dt><i class="k k-sobra"></i>Sobra pro dia a dia</dt><dd>~R$ 606,48</dd></div></dl><p class="m-nota">R$ 353,50 dessa sobra ficam para o começo de janeiro.</p></div></div>
+    <p class="resto">Em janeiro, o restante do empréstimo (R$ 228,60) no dia 15 e a parcela do Vitor. Em fevereiro e março, só o Vitor: R$ 61,15 por mês.</p>
+  </section>
+
+  <footer>
+    <p>Valores com ~ são estimativas. Suas marcações ficam salvas neste navegador.</p>
+    <button type="button" id="limpar">Desmarcar todos</button>
+  </footer>
+</main>
+
+<script>
+(function () {
+  const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const brl = v => BRL.format(v);
+  const r2 = v => Math.round(v * 100) / 100;
+  const MES = { nov: '11', dez: '12', jan: '01', fev: '02', mar: '03' };
+
+  const DIVIDAS = [
+    { id: 'emprestimo', nome: 'Empréstimo', total: 1960.35, vence: '18/12/2026', plano: 'Cinco pagamentos, quitado em 15/01.',
+      nota: 'Combine antes com quem emprestou: R$ 300 até 18/12, R$ 1.046,40 quando cair o 13º, R$ 385,35 em 30/12 e R$ 228,60 em 15/01. Com 4 freelas a mais até 30/12, dá pra quitar tudo ainda em 2026.' },
+    { id: 'picpay', nome: 'PicPay', total: 373, vence: '15/11/2026', plano: 'À vista, no dia do adiantamento.',
+      nota: 'Pague no dia 15, sem atraso: os juros de atraso costumam ser altos.' },
+    { id: 'neia', nome: 'Neia', total: 330, vence: '20/12/2026', plano: 'Duas parcelas de R$ 165,00.' },
+    { id: 'vitor', nome: 'Vitor', total: 305.75, vence: '31/03/2027', plano: 'Cinco parcelas de R$ 61,15.',
+      nota: 'Na sua planilha o vencimento está 31/03/2026; o plano considera 2027.' }
+  ];
+  const TOTAL = r2(DIVIDAS.reduce((s, d) => s + d.total, 0));
+
+  const CUPONS = [
+    { dia: '02', mes: 'nov', rotulo: 'Saldo inicial',
+      entradas: [['Saldo em conta', 464]],
+      pagamentos: [{ id: 'energia-nov', nome: 'Energia de novembro', valor: 181.41 }],
+      sobra: 282.59, ate: 'até 14/11' },
+    { dia: '15', mes: 'nov', rotulo: 'Adiantamento',
+      entradas: [['Adiantamento', 552.98], ['Freelas de novembro (3 × R$ 70)', 210, true]],
+      pagamentos: [
+        { id: 'internet-nov', nome: 'Internet', valor: 100 },
+        { id: 'picpay', nome: 'PicPay', valor: 373, divida: 'picpay', quita: true }
+      ],
+      sobra: 289.98, sobraEst: true, ate: 'até 29/11',
+      nota: 'Em novembro os freelas ficam com você: é o mês mais apertado.' },
+    { dia: '30', mes: 'nov', rotulo: 'Folha mensal',
+      entradas: [['Folha mensal', 730, true]],
+      pagamentos: [
+        { id: 'energia-dez', nome: 'Energia de dezembro', valor: 185, est: true },
+        { id: 'neia-1', nome: 'Neia, parcela 1 de 2', valor: 165, divida: 'neia' },
+        { id: 'vitor-1', nome: 'Vitor, parcela 1 de 5', valor: 61.15, divida: 'vitor' },
+        { id: 'emp-1', nome: 'Empréstimo', valor: 100, divida: 'emprestimo' }
+      ],
+      sobra: 218.85, sobraEst: true, ate: 'até 14/12',
+      nota: 'Separe a energia de dezembro já neste dia, mesmo que ela vença depois.' },
+    { dia: '15', mes: 'dez', rotulo: 'Adiantamento',
+      entradas: [['Adiantamento', 552.98]],
+      pagamentos: [
+        { id: 'internet-dez', nome: 'Internet', valor: 100 },
+        { id: 'emp-2', nome: 'Empréstimo', valor: 200, divida: 'emprestimo' }
+      ],
+      sobra: 252.98, ate: 'até 29/12',
+      nota: 'Esse valor precisa durar até o fim do mês, Natal incluído.' },
+    { dia: '20', mes: 'dez', prev: true, rotulo: '13º, previsão',
+      entradas: [['13º, 2ª parcela', 1071.40], ['Freelas de dezembro até o dia 20', 140, true]],
+      pagamentos: [
+        { id: 'neia-2', nome: 'Neia, parcela 2 de 2', valor: 165, divida: 'neia', quita: true },
+        { id: 'emp-3', nome: 'Empréstimo', valor: 1046.40, divida: 'emprestimo' }
+      ],
+      sobra: 0, sobraEst: true,
+      nota: 'Tudo o que entra aqui vai para as dívidas.' },
+    { dia: '30', mes: 'dez', rotulo: 'Folha mensal',
+      entradas: [['Folha mensal', 730, true], ['Último freela de dezembro', 70, true]],
+      pagamentos: [
+        { id: 'emp-4', nome: 'Empréstimo', valor: 385.35, divida: 'emprestimo' },
+        { id: 'vitor-2', nome: 'Vitor, parcela 2 de 5', valor: 61.15, divida: 'vitor' }
+      ],
+      sobra: 353.50, sobraEst: true, ate: 'até 14/01',
+      nota: 'Também precisa cobrir a energia de janeiro.' },
+    { dia: '15', mes: 'jan', rotulo: 'Adiantamento',
+      entradas: [['Adiantamento', 552.98]],
+      pagamentos: [
+        { id: 'internet-jan', nome: 'Internet', valor: 100 },
+        { id: 'emp-5', nome: 'Empréstimo, restante', valor: 228.60, divida: 'emprestimo', quita: true }
+      ],
+      sobra: 224.38, ate: 'até 29/01',
+      nota: 'Com 4 freelas a mais até 30/12, este pagamento sai em 30/12 e o empréstimo fecha no ano.' },
+    { dia: '31', mes: 'jan', rotulo: 'até o fim do mês',
+      pagamentos: [{ id: 'vitor-3', nome: 'Vitor, parcela 3 de 5', valor: 61.15, divida: 'vitor' }] },
+    { dia: '28', mes: 'fev', rotulo: 'até o fim do mês',
+      pagamentos: [{ id: 'vitor-4', nome: 'Vitor, parcela 4 de 5', valor: 61.15, divida: 'vitor' }] },
+    { dia: '31', mes: 'mar', rotulo: 'vencimento final',
+      pagamentos: [{ id: 'vitor-5', nome: 'Vitor, parcela 5 de 5', valor: 61.15, divida: 'vitor', quita: true }] }
+  ];
+
+  const MESES = [
+    { nome: 'Novembro', entradas: 1956.98, contas: 466.41, dividas: 699.15, sobra: 791.42,
+      nota: 'As contas fixas incluem a energia de dezembro, separada em 30/11.' },
+    { nome: 'Dezembro', entradas: 2564.38, contas: 100, dividas: 1857.90, sobra: 606.48,
+      nota: 'R$ 353,50 dessa sobra ficam para o começo de janeiro.' }
+  ];
+
+  function htmlCupom(c, i) {
+    let h = '<article class="cupom" data-i="' + i + '">';
+    h += '<div class="canhoto"><span class="tag-proximo">próximo</span>' +
+         '<span class="dia">' + (c.prev ? '~' : '') + c.dia + '</span>' +
+         '<span class="mes">' + c.mes + '</span>' +
+         '<span class="rotulo">' + c.rotulo + '</span></div>';
+    h += '<div class="corpo">';
+    if (c.entradas) {
+      h += '<div class="bloco"><h3>Entra</h3><ul class="lista-entra">' +
+        c.entradas.map(e => '<li><span>' + e[0] + '</span><span class="valor">' + (e[2] ? '~' : '') + brl(e[1]) + '</span></li>').join('') +
+        '</ul></div>';
+    }
+    h += '<div class="bloco"><h3>Paga</h3><ul class="lista-paga">' +
+      c.pagamentos.map(p =>
+        '<li><label class="item' + (p.divida ? ' eh-divida' : '') + '">' +
+        '<input type="checkbox" data-id="' + p.id + '">' +
+        '<span class="nome">' + p.nome + (p.quita ? '<span class="quita">quita</span>' : '') + '</span>' +
+        '<span class="valor">' + (p.est ? '~' : '') + brl(p.valor) + '</span></label></li>'
+      ).join('') + '</ul></div>';
+    if (c.sobra !== undefined) {
+      h += '<p class="sobra"><span>Sobra pro dia a dia' + (c.ate ? ' <small>' + c.ate + '</small>' : '') + '</span>' +
+           '<strong>' + (c.sobraEst ? '~' : '') + brl(c.sobra) + '</strong></p>';
+    }
+    if (c.nota) h += '<p class="nota">' + c.nota + '</p>';
+    h += '</div><div class="carimbo" aria-hidden="true">Pago</div></article>';
+    return h;
+  }
+
+  function htmlDivida(d) {
+    const parcelas = [];
+    CUPONS.forEach(c => c.pagamentos.forEach(p => {
+      if (p.divida === d.id) parcelas.push({ id: p.id, valor: p.valor, data: (c.prev ? '~' : '') + c.dia + '/' + MES[c.mes] });
+    }));
+    return '<div class="divida" data-d="' + d.id + '">' +
+      '<div class="d-topo"><h3>' + d.nome + '</h3><span class="d-total">' + brl(d.total) + '</span></div>' +
+      '<p class="d-meta">Vence em ' + d.vence + '. ' + d.plano + '</p>' +
+      '<div class="trilho"><div class="barra"></div></div>' +
+      '<p class="d-status"></p>' +
+      '<ul class="parcelas">' + parcelas.map(p =>
+        '<li data-id="' + p.id + '"><span class="p-data">' + p.data + '</span><span class="p-valor">' + brl(p.valor) + '</span></li>'
+      ).join('') + '</ul>' +
+      (d.nota ? '<p class="d-nota">' + d.nota + '</p>' : '') +
+      '</div>';
+  }
+
+  function htmlMes(m) {
+    return '<div class="mes-bloco">' +
+      '<div class="m-topo"><h3>' + m.nome + '</h3><span>Entra ~' + brl(m.entradas) + '</span></div>' +
+      '<div class="pilha" role="img" aria-label="Divisão das entradas de ' + m.nome.toLowerCase() + '">' +
+        '<span class="s-contas" data-w="' + (m.contas / m.entradas * 100) + '"></span>' +
+        '<span class="s-dividas" data-w="' + (m.dividas / m.entradas * 100) + '"></span>' +
+        '<span class="s-sobra" data-w="' + (m.sobra / m.entradas * 100) + '"></span>' +
+      '</div>' +
+      '<dl class="legenda">' +
+        '<div><dt><i class="k k-contas"></i>Contas fixas (energia e internet)</dt><dd>' + brl(m.contas) + '</dd></div>' +
+        '<div><dt><i class="k k-dividas"></i>Dívidas</dt><dd>' + brl(m.dividas) + '</dd></div>' +
+        '<div><dt><i class="k k-sobra"></i>Sobra pro dia a dia</dt><dd>~' + brl(m.sobra) + '</dd></div>' +
+      '</dl>' +
+      '<p class="m-nota">' + m.nota + '</p>' +
+      '</div>';
+  }
+
+  document.querySelectorAll('.pilha span').forEach(s => { s.style.width = s.dataset.w + '%'; });
+
+  const KEY = 'carne-quitacao-v1';
+  let feito = new Set();
+  try {
+    const salvo = localStorage.getItem(KEY);
+    if (salvo) feito = new Set(JSON.parse(salvo));
+  } catch (e) { feito = new Set(); }
+  function salvar() {
+    try { localStorage.setItem(KEY, JSON.stringify(Array.from(feito))); } catch (e) {}
+  }
+
+  function atualizar() {
+    const pago = {};
+    DIVIDAS.forEach(d => { pago[d.id] = 0; });
+    CUPONS.forEach(c => c.pagamentos.forEach(p => {
+      if (p.divida && feito.has(p.id)) pago[p.divida] += p.valor;
+    }));
+
+    let total = 0;
+    DIVIDAS.forEach(d => {
+      const v = r2(pago[d.id]);
+      total += v;
+      const falta = r2(d.total - v);
+      const el = document.querySelector('.divida[data-d="' + d.id + '"]');
+      el.querySelector('.barra').style.width = Math.min(100, v / d.total * 100) + '%';
+      el.classList.toggle('quitada', falta <= 0);
+      el.querySelector('.d-status').textContent = falta <= 0 ? 'Quitada' : brl(v) + ' pago, falta ' + brl(falta);
+    });
+    total = r2(total);
+    const faltaTotal = r2(TOTAL - total);
+    document.getElementById('pago-total').textContent = brl(total);
+    document.getElementById('barra-total').style.width = Math.min(100, total / TOTAL * 100) + '%';
+    document.getElementById('falta-total').textContent = faltaTotal <= 0 ? 'Todas as dívidas quitadas.' : 'Falta ' + brl(faltaTotal);
+
+    document.querySelectorAll('.parcelas li').forEach(li => li.classList.toggle('feito', feito.has(li.dataset.id)));
+    document.querySelectorAll('.cupom input').forEach(inp => { inp.checked = feito.has(inp.dataset.id); });
+
+    let achouAtual = false;
+    document.querySelectorAll('.cupom').forEach(el => {
+      const c = CUPONS[Number(el.dataset.i)];
+      const completo = c.pagamentos.every(p => feito.has(p.id));
+      el.classList.toggle('pago', completo);
+      const atual = !completo && !achouAtual;
+      if (atual) achouAtual = true;
+      el.classList.toggle('atual', atual);
+    });
+  }
+
+  document.getElementById('cupons').addEventListener('change', e => {
+    const t = e.target;
+    if (!t.matches('input[type="checkbox"]')) return;
+    if (t.checked) feito.add(t.dataset.id); else feito.delete(t.dataset.id);
+    salvar();
+    atualizar();
+  });
+
+  const botao = document.getElementById('limpar');
+  let armado = null;
+  botao.addEventListener('click', () => {
+    if (!armado) {
+      botao.textContent = 'Toque de novo para desmarcar todos';
+      armado = setTimeout(() => { armado = null; botao.textContent = 'Desmarcar todos'; }, 4000);
+      return;
+    }
+    clearTimeout(armado);
+    armado = null;
+    feito.clear();
+    salvar();
+    atualizar();
+    botao.textContent = 'Desmarcar todos';
+  });
+
+  atualizar();
+  requestAnimationFrame(() => document.body.classList.add('pronto'));
+})();
+</script>
+</body>
+</html>
